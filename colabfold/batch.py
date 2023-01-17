@@ -359,6 +359,7 @@ def predict_structure(
         prediction_result, recycles = model_runner.predict(
             input_features, random_seed=random_seed
         )
+        print(prediction_result.keys())
 
         prediction_time = time.time() - start
         prediction_times.append(prediction_time)
