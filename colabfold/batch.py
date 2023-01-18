@@ -62,6 +62,8 @@ from colabfold.utils import (
 )
 from Bio.PDB import MMCIFParser, PDBParser, MMCIF2Dict
 
+import jax #add"3
+
 logger = logging.getLogger(__name__)
 
 
@@ -301,6 +303,20 @@ def batch_input(
     return input_fix
 
 
+#add"3 whole function
+def parse_disto_results(prediction_result):
+    
+    to_np = lambda a: np.asarray(a)
+    
+    dist_bins = jax.numpy.append(0,prediction_result["distogram"]["bin_edges"])
+    dist_mtx = dist_bins[prediction_result["distogram"]["logits"].argmax(-1)]
+    contact_mtx = jax.nn.softmax(prediction_result["distogram"]["logits"])[:,:,dist_bins < 8].sum(-1)
+    
+    out = {"dists": to_np(dist_mtx),
+           "adj": to_np(contact_mtx)}
+    return out
+
+
 def predict_structure(
     prefix: str,
     result_dir: Path,
@@ -361,11 +377,7 @@ def predict_structure(
             input_features, random_seed=random_seed
         )
         
-        print(type(prediction_result["distogram"])) # add"2
-        if type(prediction_result["distogram"]) == dict:
-            print(prediction_result["distogram"].keys())
-        else:
-            print(prediction_result["distogram"].shape)
+        disto_dict = parse_disto_results(prediction_result)
 
         prediction_time = time.time() - start
         prediction_times.append(prediction_time)
@@ -440,7 +452,7 @@ def predict_structure(
         if model_type.startswith("AlphaFold2-multimer"):
             iptmscore.append(prediction_result["iptm"])
         max_paes.append(prediction_result["max_predicted_aligned_error"].item())
-        all_distograms.append(prediction_result["distogram"]) #add"
+        all_distograms.append(disto_dict) #add"3
         paes_res = []
 
         for i in range(seq_len):
@@ -518,7 +530,7 @@ def predict_structure(
     else:
         model_rank = np.mean(plddts, -1).argsort()[::-1]
     out = {}
-    disto_out = {} #add"
+    disto_out = {} #add"3
     logger.info(f"reranking models by {rank_by}")
     for n, key in enumerate(model_rank):
         unrelaxed_pdb_path = result_dir.joinpath(
@@ -568,8 +580,8 @@ def predict_structure(
             "model_name": model_names[key],
             "representations": representations[key],
         }
-        disto_out[key] = {"distogram": all_distograms[key]} #add"
-    return out, model_rank, disto_out #add"
+        disto_out[key] = {"distogram": all_distograms[key]} #add"3
+    return out, model_rank, disto_out #add"3
 
 
 def parse_fasta(fasta_string: str) -> Tuple[List[str], List[str]]:
@@ -1401,7 +1413,7 @@ def run(
             if sum(query_sequence_len_array) > crop_len:
                 crop_len = math.ceil(sum(query_sequence_len_array) * recompile_padding)
 
-            outs, model_rank, disto_out = predict_structure( #add"
+            outs, model_rank, disto_out = predict_structure( #add"3
                 jobname,
                 result_dir,
                 input_features,
@@ -1536,7 +1548,7 @@ def run(
 
     logger.info("Done")
     
-    return disto_out
+    return disto_out #add"3
 
 
 def set_model_type(is_complex: bool, model_type: str) -> str:
