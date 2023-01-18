@@ -361,7 +361,7 @@ def predict_structure(
             input_features, random_seed=random_seed
         )
         
-        print(type(prediction_result["distogram"]))
+        print(type(prediction_result["distogram"])) # add"2
         if type(prediction_result["distogram"]) == dict:
             print(prediction_result["distogram"].keys())
         else:
@@ -1535,6 +1535,8 @@ def run(
             is_done_marker.touch()
 
     logger.info("Done")
+    
+    return disto_out
 
 
 def set_model_type(is_complex: bool, model_type: str) -> str:
