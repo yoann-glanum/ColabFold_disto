@@ -329,7 +329,7 @@ def predict_structure(
     relax_times = []
     representations = []
     seq_len = sum(sequences_lengths)
-    all_distograms = []
+    all_distograms = [] #add"
 
     model_names = []
     for (model_name, model_runner, params) in model_runner_and_params:
@@ -360,6 +360,12 @@ def predict_structure(
         prediction_result, recycles = model_runner.predict(
             input_features, random_seed=random_seed
         )
+        
+        print(type(prediction_result["distogram"]))
+        if type(prediction_result["distogram"]) == dict:
+            print(prediction_result["distogram"].keys())
+        else:
+            print(prediction_result["distogram"].shape)
 
         prediction_time = time.time() - start
         prediction_times.append(prediction_time)
@@ -434,7 +440,7 @@ def predict_structure(
         if model_type.startswith("AlphaFold2-multimer"):
             iptmscore.append(prediction_result["iptm"])
         max_paes.append(prediction_result["max_predicted_aligned_error"].item())
-        all_distograms.append(prediction_result["distogram"])
+        all_distograms.append(prediction_result["distogram"]) #add"
         paes_res = []
 
         for i in range(seq_len):
@@ -512,7 +518,7 @@ def predict_structure(
     else:
         model_rank = np.mean(plddts, -1).argsort()[::-1]
     out = {}
-    disto_out = {}
+    disto_out = {} #add"
     logger.info(f"reranking models by {rank_by}")
     for n, key in enumerate(model_rank):
         unrelaxed_pdb_path = result_dir.joinpath(
@@ -562,8 +568,8 @@ def predict_structure(
             "model_name": model_names[key],
             "representations": representations[key],
         }
-        disto_out[key] = {"distogram": all_distograms[key]}
-    return out, model_rank, disto_out
+        disto_out[key] = {"distogram": all_distograms[key]} #add"
+    return out, model_rank, disto_out #add"
 
 
 def parse_fasta(fasta_string: str) -> Tuple[List[str], List[str]]:
@@ -1395,7 +1401,7 @@ def run(
             if sum(query_sequence_len_array) > crop_len:
                 crop_len = math.ceil(sum(query_sequence_len_array) * recompile_padding)
 
-            outs, model_rank, disto_out = predict_structure(
+            outs, model_rank, disto_out = predict_structure( #add"
                 jobname,
                 result_dir,
                 input_features,
@@ -1444,7 +1450,7 @@ def run(
                     np.save(pair_filename, pair_representation)
         #
         
-        # Write Distogram
+        # Write Distogram #add" paragraph
         for disto_key in disto_out:
             temp_disto_path = result_dir.joinpath(f"{jobname}_distogram_{disto_key}")
             temp_disto_object = np.array([disto_out[disto_key]["distogram"]])
