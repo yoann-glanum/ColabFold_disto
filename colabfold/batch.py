@@ -581,7 +581,7 @@ def predict_structure(
             "model_name": model_names[key],
             "representations": representations[key],
         }
-        disto_out[key] = {"distogram": all_distograms[key]} #add"3
+        disto_out[key] = {"distogram_dict": all_distograms[key]} #add"3
     return out, model_rank, disto_out #add"3
 
 
@@ -1466,7 +1466,7 @@ def run(
         # Write Distogram #add" paragraph
         for disto_key in disto_out:
             temp_disto_path = result_dir.joinpath(f"{jobname}_distogram_{disto_key}")
-            temp_disto_object = np.array([disto_out[disto_key]["distogram"]])
+            temp_disto_object = np.array([disto_out[disto_key]["distogram_dict"]])
             np.save(temp_disto_path, temp_disto_object)
         # 
 
