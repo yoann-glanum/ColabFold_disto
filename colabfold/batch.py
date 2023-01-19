@@ -312,8 +312,9 @@ def parse_disto_results(prediction_result):
     dist_mtx = dist_bins[prediction_result["distogram"]["logits"].argmax(-1)]
     contact_mtx = jax.nn.softmax(prediction_result["distogram"]["logits"])[:,:,dist_bins < 8].sum(-1)
     
-    out = {"dists": to_np(dist_mtx),
-           "adj": to_np(contact_mtx)}
+    out = {"dists": to_np(dist_mtx), 
+           "adj": to_np(contact_mtx), 
+           "disto_3D": to_np(prediction_result["distogram"]["logits"])}
     return out
 
 
@@ -345,7 +346,7 @@ def predict_structure(
     relax_times = []
     representations = []
     seq_len = sum(sequences_lengths)
-    all_distograms = [] #add"
+    all_distograms = [] #add"3
 
     model_names = []
     for (model_name, model_runner, params) in model_runner_and_params:
