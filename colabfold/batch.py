@@ -314,7 +314,10 @@ def parse_disto_results(prediction_result):
     
     out = {"dists": to_np(dist_mtx), 
            "adj": to_np(contact_mtx), 
-           "disto_3D": to_np(prediction_result["distogram"]["logits"])}
+           "disto_3D": to_np(prediction_result["distogram"]["logits"]), 
+           "18-19-20-21-22": to_np(jax.nn.softmax(prediction_result["distogram"]["logits"])[:,:, 18:22+1])}
+    #add"4 assumes every complex is cut at bin 20, need to check on a few other complexes
+    #add"4 did not test that that index thing on jax, but works on numpy
     return out
 
 
