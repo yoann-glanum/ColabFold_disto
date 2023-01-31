@@ -450,7 +450,7 @@ def predict_structure(
             mean_plddt = prediction_result["plddt"][:seq_len].mean()
             mean_ptm = float(prediction_result["ptm"])
             
-            #add" modified rank_by section to match the actual rank by
+            #add" modified rank_by choice section to match the actual rank_by ranking section
             mean_score = mean_ptm # by default, overwrite if needed
             if rank_by == "plddt":
                 mean_score = mean_plddt
@@ -459,7 +459,7 @@ def predict_structure(
                     if "multimer" in model_type:
                         mean_iptm = float(prediction_result["iptm"]) # need a float cast?
                         mean_score = mean_iptm * 0.8 + mean_ptm * 0.2
-            # any else is just mean_ptm
+            # anything else gets just mean_ptm
             
 
             # report summary metrics
@@ -468,6 +468,7 @@ def predict_structure(
                 if "multimer" in model_type:
                     mean_iptm = prediction_result["iptm"]
                     print_line += f", ptmscore {mean_ptm:.3g} and iptm {mean_iptm:.3g}"
+                    print_line += f" and multimer confidence {float(mean_iptm * 0.8 + mean_ptm * 0.2):.3g}"#add"
                 else:
                     print_line += f" and ptmscore {mean_ptm:.3g}"
             logger.info(print_line)
@@ -565,7 +566,7 @@ def predict_structure(
     if rank_by == "plddt": #add" swap plddt and ptm to homogenise the treatment of 'rank_by'
         model_rank = np.array(plddts).argsort()[::-1]
     elif rank_by == "multimer":
-        model_rank = (np.array(iptmscores) * 0.8 + np.array(ptmscore) * 0.2).argsort()[::-1]
+        model_rank = (np.array(iptmscores) * 0.8 + np.array(ptmscores) * 0.2).argsort()[::-1]
     else:
         model_rank = np.array(ptmscores).argsort()[::-1]
     
@@ -1508,20 +1509,22 @@ def run(
             with scores_file.open("r") as handle:
                 scores.append(json.load(handle))
         
-        # write alphafold-db format (pAE)
-        af_pae_file = result_dir.joinpath(f"{jobname}_predicted_aligned_error_v1.json")
-        af_pae_file.write_text(json.dumps({
-            "predicted_aligned_error":scores[0]["pae"],
-            "max_predicted_aligned_error":scores[0]["max_pae"]}))
-        result_files.append(af_pae_file)
+        #add" comment that whole part
+        # # write alphafold-db format (pAE)
+        # af_pae_file = result_dir.joinpath(f"{jobname}_predicted_aligned_error_v1.json")
+        # af_pae_file.write_text(json.dumps({
+        #     "predicted_aligned_error":scores[0]["pae"],
+        #     "max_predicted_aligned_error":scores[0]["max_pae"]}))
+        # result_files.append(af_pae_file)
         
-        # make pAE plots
-        paes_plot = plot_paes([np.asarray(x["pae"]) for x in scores],
-            Ls=query_sequence_len_array, dpi=dpi)
-        pae_png = result_dir.joinpath(f"{jobname}_pae.png")
-        paes_plot.savefig(str(pae_png), bbox_inches='tight')
-        paes_plot.close()
-        result_files.append(pae_png)
+        #add" comment that too
+        # # make pAE plots
+        # paes_plot = plot_paes([np.asarray(x["pae"]) for x in scores],
+        #     Ls=query_sequence_len_array, dpi=dpi)
+        # pae_png = result_dir.joinpath(f"{jobname}_pae.png")
+        # paes_plot.savefig(str(pae_png), bbox_inches='tight')
+        # paes_plot.close()
+        # result_files.append(pae_png)
 
         # make pLDDT plot
         plddt_plot = plot_plddts([np.asarray(x["plddt"]) for x in scores],
