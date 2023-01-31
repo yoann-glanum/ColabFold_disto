@@ -23,6 +23,8 @@ import importlib_metadata
 import numpy as np
 import pandas
 
+import jax #add"
+
 try:
     import alphafold
 except ModuleNotFoundError:
@@ -328,6 +330,8 @@ def relax_me(pdb_filename=None, pdb_lines=None, pdb_obj=None, use_gpu=False):
     relaxed_pdb_lines, _, _ = amber_relaxer.process(prot=pdb_obj)
     return relaxed_pdb_lines
 
+#%%
+
 class file_manager:
     def __init__(self, prefix: str, result_dir: Path):
         self.prefix = prefix
@@ -344,6 +348,25 @@ class file_manager:
 
     def set_tag(self, tag):
         self.tag = tag
+
+
+#add" whole function to process the distogram
+def parse_disto_results(prediction_result):
+
+    to_np = lambda a: np.asarray(a)
+
+    dist_bins = jax.numpy.append(0,prediction_result["distogram"]["bin_edges"])
+    dist_mtx = dist_bins[prediction_result["distogram"]["logits"].argmax(-1)]
+    contact_mtx = jax.nn.softmax(prediction_result["distogram"]["logits"])[:,:,dist_bins < 8].sum(-1)
+
+    out = {"dists": to_np(dist_mtx), 
+           "adj": to_np(contact_mtx), 
+           #"disto_3D": to_np(prediction_result["distogram"]["logits"]), 
+           "18-19-20-21-22": to_np(jax.nn.softmax(prediction_result["distogram"]["logits"])[:,:, 18:22+1])}
+    #add"4 assumes every complex is cut at bin 20, need to check on a few other complexes
+    #add"5 tested and works as intended
+    return out
+
 
 def predict_structure(
     prefix: str,
@@ -419,13 +442,25 @@ def predict_structure(
                 for k,v in x.items():
                     y[k] = as_np(v) if isinstance(v,dict) else np.asarray(v)
                 return y
+            disto_dict = parse_disto_results(prediction_result) #add" before the conversion, just in case
             prediction_result = as_np(prediction_result)
             prediction_result["representations"] = prediction_result.pop("prev")
 
             # gather summary metrics
             mean_plddt = prediction_result["plddt"][:seq_len].mean()
-            mean_ptm = float(prediction_result["ptm"])            
-            mean_score = mean_plddt if rank_by == "plddt" else mean_ptm
+            mean_ptm = float(prediction_result["ptm"])
+            
+            #add" modified rank_by section to match the actual rank by
+            mean_score = mean_ptm # by default, overwrite if needed
+            if rank_by == "plddt":
+                mean_score = mean_plddt
+            elif rank_by == "multimer":
+                if is_complex or "ptm" in model_type:
+                    if "multimer" in model_type:
+                        mean_iptm = float(prediction_result["iptm"]) # need a float cast?
+                        mean_score = mean_iptm * 0.8 + mean_ptm * 0.2
+            # any else is just mean_ptm
+            
 
             # report summary metrics
             print_line = f"{model_names[-1]} took {prediction_times[-1]:.1f}s ({recycles} recycles) with pLDDT {mean_plddt:.3g}"
@@ -488,6 +523,12 @@ def predict_structure(
                 if save_all:
                     with files.get("all","pickle").open("wb") as handle:
                         pickle.dump(prediction_result, handle)
+            
+            #add" save custom distogram info
+            temp_disto_path = files.get("custom_disto", "npy")
+            temp_disto_object = np.array([disto_dict])
+            np.save(temp_disto_path, temp_disto_object)
+            # 
 
             # write an easy-to-use format (pAE and plDDT)
             pae = prediction_result["predicted_aligned_error"][:seq_len,:seq_len]
@@ -504,7 +545,7 @@ def predict_structure(
             with files.get("scores","json").open("w") as handle:
                 scores = {
                     "max_pae": pae.max().astype(float).item(),
-                    "pae":   np.around(pae.astype(float), 2).tolist(),
+                    # "pae":   np.around(pae.astype(float), 2).tolist(), #add" comment, lighter json
                     "plddt": np.around(plddt.astype(float), 2).tolist(),
                     "ptm":   np.around(ptmscore.astype(float), 2).item(),
                 }
