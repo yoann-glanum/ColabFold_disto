@@ -318,6 +318,7 @@ def parse_disto_results(prediction_result):
            "18-19-20-21-22": to_np(jax.nn.softmax(prediction_result["distogram"]["logits"])[:,:, 18:22+1])}
     #add"4 assumes every complex is cut at bin 20, need to check on a few other complexes
     #add"4 did not test that that index thing on jax, but works on numpy
+    #add"5 tested and works as intended
     return out
 
 
@@ -381,7 +382,7 @@ def predict_structure(
             input_features, random_seed=random_seed
         )
         
-        disto_dict = parse_disto_results(prediction_result)
+        disto_dict = parse_disto_results(prediction_result) #add"4
 
         prediction_time = time.time() - start
         prediction_times.append(prediction_time)
