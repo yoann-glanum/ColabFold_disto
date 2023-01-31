@@ -562,12 +562,12 @@ def predict_structure(
     ###################################################
     # rerank models based on predicted confidence
     ###################################################
-    if rank_by == "ptmscore":
-        model_rank = np.array(ptmscores).argsort()[::-1]
+    if rank_by == "plddt": #add" swap plddt and ptm to homogenise the treatment of 'rank_by'
+        model_rank = np.array(plddts).argsort()[::-1]
     elif rank_by == "multimer":
         model_rank = (np.array(iptmscores) * 0.8 + np.array(ptmscore) * 0.2).argsort()[::-1]
     else:
-        model_rank = np.array(plddts).argsort()[::-1]
+        model_rank = np.array(ptmscores).argsort()[::-1]
     
     rank, metric = [],[]
     result_files = []
