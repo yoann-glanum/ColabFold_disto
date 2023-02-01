@@ -451,7 +451,7 @@ def predict_structure(
             mean_ptm = float(prediction_result["ptm"])
             
             #add" modified rank_by choice section to match the actual rank_by ranking section
-            mean_score = mean_ptm # by default, overwrite if needed
+            mean_score = mean_ptm*100 # by default, overwrite if needed
             if rank_by == "plddt":
                 mean_score = mean_plddt
             elif rank_by == "multimer":
@@ -459,6 +459,7 @@ def predict_structure(
                     if "multimer" in model_type:
                         mean_iptm = float(prediction_result["iptm"]) # need a float cast?
                         mean_score = mean_iptm * 0.8 + mean_ptm * 0.2
+                        mean_score *= 100
             # anything else gets just mean_ptm
             
 
@@ -467,10 +468,10 @@ def predict_structure(
             if is_complex or "ptm" in model_type:
                 if "multimer" in model_type:
                     mean_iptm = prediction_result["iptm"]
-                    print_line += f", ptmscore {mean_ptm:.3g} and iptm {mean_iptm:.3g}"
-                    print_line += f" and multimer confidence {float(mean_iptm * 0.8 + mean_ptm * 0.2):.3g}"#add"
+                    print_line += f", ptmscore {100*mean_ptm:.3g} and iptm {100*mean_iptm:.3g}"
+                    print_line += f" and multimer confidence {100*float(mean_iptm * 0.8 + mean_ptm * 0.2):.3g}"#add"
                 else:
-                    print_line += f" and ptmscore {mean_ptm:.3g}"
+                    print_line += f" and ptmscore {100*mean_ptm:.3g}"
             logger.info(print_line)
 
             # update residue index
