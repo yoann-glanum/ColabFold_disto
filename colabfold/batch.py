@@ -444,6 +444,8 @@ def predict_structure(
                 return y
             disto_dict = parse_disto_results(prediction_result) #add" before the conversion, just in case
             prediction_result = as_np(prediction_result)
+            if "prev" not in prediction_result:
+                print(prediction_result.keys())
             prediction_result["representations"] = prediction_result.pop("prev")
 
             # gather summary metrics
