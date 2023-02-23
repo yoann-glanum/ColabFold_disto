@@ -154,26 +154,29 @@ class Module1_Predictor():
         self.ens_method = ensemble_name
         
         ens_dict = weights_json[ensemble_name]
-        self.ens_threshold = ens_dict['post_scale_ens_threshold']
+        self.ens_threshold = float(ens_dict['post_scale_ens_threshold'])
         
         self.refresh_mapping_dict()
         #TODO add check for vars min == vars max
         for subvar in ens_dict['vars_min_pre_scale']:
             # get average over all ranks : seeds * models
             subvar_avg = np.mean(self.sub_vars_mapping[subvar])
+            subvar_avg = float(subvar_avg) # for json float64
             self.sub_vars_raw_vals[subvar] = subvar_avg
             
             # normalise with min max from the weights
             ratio_num = subvar_avg - ens_dict['vars_min_pre_scale'][subvar]
             ratio_denum = ens_dict['vars_max_pre_scale'][subvar] - ens_dict['vars_min_pre_scale'][subvar]
             normalised_value = ratio_num/ratio_denum
+            normalised_value = float(normalised_value) # for json float64
             self.sub_vars_norm_vals[subvar] = normalised_value
         
         # raw prediction
         raw_pred = np.mean([value for key, value in self.sub_vars_norm_vals.items()])
+        raw_pred = float(raw_pred)
         predicted_class = raw_pred >= self.ens_threshold
         self.raw_prediction = raw_pred
-        self.predicted_class = predicted_class
+        self.predicted_class = bool(predicted_class)
         
         #dev only
         print("prediction done")
