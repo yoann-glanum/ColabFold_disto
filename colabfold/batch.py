@@ -1513,6 +1513,7 @@ def run(
         interaction_predictor.predict_module(input_predictor_weight_path)
         inf_save_path = f"{result_dir.joinpath(jobname).as_posix()}_module1_inference.json"
         interaction_predictor.save_ens_prediction(inf_save_path)
+        result_files.append(result_dir.joinpath(f"{jobname}_module1_inference.json"))
 
         ###############
         # save plots

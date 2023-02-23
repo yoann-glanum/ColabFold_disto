@@ -84,7 +84,7 @@ class Module1_Predictor():
             temp_nb_peptide = len(input_sequence[0])
             self.nb_peptide = temp_nb_peptide
         
-        #dev only
+        #dev only?
         print(f"Found {self.nb_peptide} peptide AAs in sequence")
         
         return temp_nb_peptide
@@ -96,9 +96,6 @@ class Module1_Predictor():
         
         self.iptm_list.append(float(new_iptm))
         
-        #dev only
-        print(f"Added {new_iptm} to {self.iptm_list}")
-        
         return
     
     # 
@@ -106,9 +103,6 @@ class Module1_Predictor():
         
         pep_plddt = new_plddt[0:self.nb_peptide]
         self.max_pep_plddt_list.append(np.max(pep_plddt))
-        
-        #dev only
-        print(f"Added {np.max(pep_plddt)} to {self.max_pep_plddt_list}")
         
         return
     
@@ -121,9 +115,6 @@ class Module1_Predictor():
         
         max_prob = np.max(sum_to_18)
         self.max_sum_to_18_prob_list.append(max_prob)
-        
-        #dev only
-        print(f"Added {max_prob} to {self.max_sum_to_18_prob_list}")
         
         return
     
@@ -178,8 +169,8 @@ class Module1_Predictor():
         self.raw_prediction = raw_pred
         self.predicted_class = bool(predicted_class)
         
-        #dev only
-        print("prediction done")
+        #dev only?
+        print("module 1 prediction done")
         
         return
     
@@ -198,7 +189,7 @@ class Module1_Predictor():
         with open(filepath, 'w') as f:
             json.dump(save_dict, f)
         
-        #dev only
+        #dev only?
         print(f"file saved at {filepath}")
         
         return
