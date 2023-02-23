@@ -179,7 +179,7 @@ class Module1_Predictor():
                      'raw_prediction':self.raw_prediction, 
                      'predicted_class':self.predicted_class
                      }
-        with open(f'{filepath}.json', 'w') as f:
+        with open(filepath, 'w') as f:
             json.dump(save_dict, f)
         
         #dev only
