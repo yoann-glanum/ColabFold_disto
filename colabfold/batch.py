@@ -62,6 +62,9 @@ from colabfold.utils import (
     setup_logging,
     CFMMCIFIO,
 )
+from colabfold.add_inference import Module1_Predictor # add"inf 
+
+
 from Bio.PDB import MMCIFParser, PDBParser, MMCIF2Dict
 
 logger = logging.getLogger(__name__)
@@ -389,6 +392,7 @@ def predict_structure(
     save_all: bool = False,
     save_single_representations: bool = False,
     save_pair_representations: bool = False,
+    extra_predictor_object: Module1_Predictor = None #add"inf
 ):
     """Predicts structure using AlphaFold for the given sequence."""
 
@@ -447,7 +451,12 @@ def predict_structure(
             if "prev" not in prediction_result:
                 print(prediction_result.keys())
             prediction_result["representations"] = prediction_result.pop("prev")
-
+            
+            #add"inf process inference object
+            extra_predictor_object.add_iptm(prediction_result["iptm"])
+            extra_predictor_object.add_max_pep_plddt(prediction_result["plddt"])
+            extra_predictor_object.add_18_max_prob(disto_dict['adj'], disto_dict['16-20'])
+            
             # gather summary metrics
             mean_plddt = prediction_result["plddt"][:seq_len].mean()
             mean_ptm = float(prediction_result["ptm"])
@@ -1245,6 +1254,7 @@ def run(
     max_seq: Optional[int] = None,
     max_extra_seq: Optional[int] = None,
     feature_dict_callback: Callable[[Any], Any] = None,
+    input_predictor_weight_path: str = None, 
     **kwargs
 ):
     from alphafold.notebooks.notebook_utils import get_pae_json
@@ -1342,6 +1352,9 @@ def run(
     ranks, metrics = [],[]
     for job_number, (raw_jobname, query_sequence, a3m_lines) in enumerate(queries):
         jobname = safe_filename(raw_jobname)
+        
+        interaction_predictor = Module1_Predictor() #add"inf
+        interaction_predictor.set_nb_peptide(query_sequence)
         
         #######################################
         # check if job has already finished
@@ -1484,15 +1497,22 @@ def run(
                 save_all=save_all,
                 save_single_representations=save_single_representations,
                 save_pair_representations=save_pair_representations,
+                extra_predictor_object=interaction_predictor #add"inf
             )
             result_files = results["result_files"]
             ranks.append(results["rank"])
             metrics.append(results["metric"])
+            
 
         except RuntimeError as e:
             # This normally happens on OOM. TODO: Filter for the specific OOM error message
             logger.error(f"Could not predict {jobname}. Not Enough GPU memory? {e}")
             continue
+
+        #add"inf Apply and save module1 inference
+        interaction_predictor.predict_module(input_predictor_weight_path)
+        inf_save_path = f"{result_dir.joinpath(jobname).as_posix()_module1_inference.json}"
+        interaction_predictor.save_ens_prediction(inf_save_path)
 
         ###############
         # save plots
