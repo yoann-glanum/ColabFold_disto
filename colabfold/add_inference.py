@@ -26,7 +26,7 @@ class Module1_Predictor():
     # ---- Attributes ----
     
     # -- sequence information
-    sequence: str
+    sequence: str #TODO add
     nb_peptide: int
     
     # -- rank info storage
@@ -130,6 +130,16 @@ class Module1_Predictor():
     # -- prediction
     
     # 
+    #TODO precaution not needed, remove?
+    def refresh_mapping_dict(self):
+        
+        self.sub_vars_mapping = {"avg_all_ranks_iptm": self.iptm_list, 
+                                 "avg_all_ranks_max_pep_plddt": self.max_pep_plddt_list, 
+                                 "avg_all_ranks_18_max_prob": self.max_sum_to_18_prob_list}
+        
+        return
+    
+    # 
     def predict_module(self, weights_json_fp):
         
         with open(weights_json_fp, 'r') as j:
@@ -146,6 +156,7 @@ class Module1_Predictor():
         ens_dict = weights_json[ensemble_name]
         self.ens_threshold = ens_dict['post_scale_ens_threshold']
         
+        self.refresh_mapping_dict()
         #TODO add check for vars min == vars max
         for subvar in ens_dict['vars_min_pre_scale']:
             # get average over all ranks : seeds * models
