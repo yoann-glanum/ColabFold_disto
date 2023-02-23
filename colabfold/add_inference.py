@@ -181,11 +181,15 @@ class Module1_Predictor():
         self.raw_prediction = raw_pred
         self.predicted_class = bool(predicted_class)
         
+        #TODO add distance to threshold?
+        
         #dev only?
         if logger:
-            logger.info("module 1 prediction done")
+            logger.info(f"module 1 prediction done : Binary Pep-Prot Interaction predicted as \
+                        {self.predicted_class} (raw value of {self.raw_prediction})")
         else:
-            print("module 1 prediction done")
+            print(f"module 1 prediction done : Binary Pep-Prot Interaction predicted as \
+                  {self.predicted_class} (raw value of {self.raw_prediction})")
         
         return
     
