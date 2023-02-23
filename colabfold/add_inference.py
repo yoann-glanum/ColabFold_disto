@@ -106,7 +106,7 @@ class Module1_Predictor():
         self.max_pep_plddt_list.append(np.max(pep_plddt))
         
         #dev only
-        print(f"Added {new_plddt} to {self.max_pep_plddt_list}")
+        print(f"Added {np.max(pep_plddt)} to {self.max_pep_plddt_list}")
         
         return
     
@@ -130,7 +130,8 @@ class Module1_Predictor():
     # 
     def predict_module(self, weights_json_fp):
         
-        weights_json = json.load(weights_json_fp)
+        with open(weights_json_fp, 'r') as j:
+             weights_json = json.loads(j.read())
         self.weights_filepath = weights_json_fp
         
         if len(weights_json.keys()) != 1:
