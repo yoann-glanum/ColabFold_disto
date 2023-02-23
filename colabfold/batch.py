@@ -1511,7 +1511,7 @@ def run(
 
         #add"inf Apply and save module1 inference
         interaction_predictor.predict_module(input_predictor_weight_path)
-        inf_save_path = f"{result_dir.joinpath(jobname).as_posix()_module1_inference.json}"
+        inf_save_path = f"{result_dir.joinpath(jobname).as_posix()}_module1_inference.json"
         interaction_predictor.save_ens_prediction(inf_save_path)
 
         ###############
