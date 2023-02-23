@@ -58,6 +58,8 @@ class Module1_Predictor():
         self.sub_vars_mapping = {"avg_all_ranks_iptm": self.iptm_list, 
                                  "avg_all_ranks_max_pep_plddt": self.max_pep_plddt_list, 
                                  "avg_all_ranks_18_max_prob": self.max_sum_to_18_prob_list}
+        self.sub_vars_raw_vals = {}
+        self.sub_vars_norm_vals = {}
         
         return
     
