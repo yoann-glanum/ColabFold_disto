@@ -94,7 +94,7 @@ class Module1_Predictor():
     # 
     def add_iptm(self, new_iptm):
         
-        self.iptm_list.append(new_iptm)
+        self.iptm_list.append(float(new_iptm))
         
         #dev only
         print(f"Added {new_iptm} to {self.iptm_list}")
