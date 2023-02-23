@@ -73,8 +73,14 @@ class Module1_Predictor():
     # get value and set it
     def set_nb_peptide(self, input_sequence):
         
-        temp_nb_peptide = len(input_sequence.split(':')[0])
-        self.nb_peptide = temp_nb_peptide
+        if type(input_sequence) == str:
+            print(input_sequence)
+            temp_nb_peptide = len(input_sequence.split(':')[0])
+            self.nb_peptide = temp_nb_peptide
+        elif type(input_sequence) == list:
+            print(input_sequence)
+            temp_nb_peptide = len(input_sequence[0])
+            self.nb_peptide = temp_nb_peptide
         
         #dev only
         print(f"Found {self.nb_peptide} peptide AAs in sequence")
