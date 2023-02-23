@@ -15,6 +15,8 @@ import logging
 
 from pathlib import Path
 
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 
 
 #%% class & globals
@@ -73,33 +75,42 @@ class Module1_Predictor():
     # -- init run
     
     # get value and set it
-    def set_nb_peptide(self, input_sequence):
+    def set_nb_peptide(self, input_sequence: Union[List[str], str], logger = None) -> int:
         
         if type(input_sequence) == str:
-            print(input_sequence)
+            if logger:
+                logger.info(input_sequence)
+            else:
+                print(input_sequence)
             temp_nb_peptide = len(input_sequence.split(':')[0])
             self.nb_peptide = temp_nb_peptide
         elif type(input_sequence) == list:
-            print(input_sequence)
+            if logger:
+                logger.info(input_sequence)
+            else:
+                print(input_sequence)
             temp_nb_peptide = len(input_sequence[0])
             self.nb_peptide = temp_nb_peptide
         
         #dev only?
-        print(f"Found {self.nb_peptide} peptide AAs in sequence")
+        if logger:
+            logger.info(f"Found {self.nb_peptide} peptide AAs in sequence")
+        else:
+            print(f"Found {self.nb_peptide} peptide AAs in sequence")
         
         return temp_nb_peptide
     
     # -- for each sub-prediction
     
     # 
-    def add_iptm(self, new_iptm):
+    def add_iptm(self, new_iptm: Union[np.ndarray, float]):
         
         self.iptm_list.append(float(new_iptm))
         
         return
     
     # 
-    def add_max_pep_plddt(self, new_plddt):
+    def add_max_pep_plddt(self, new_plddt: Union[List, np.ndarray]):
         
         pep_plddt = new_plddt[0:self.nb_peptide]
         self.max_pep_plddt_list.append(np.max(pep_plddt))
@@ -107,7 +118,8 @@ class Module1_Predictor():
         return
     
     # 
-    def add_18_max_prob(self, contact_map, slices):
+    def add_18_max_prob(self, contact_map: Union[List, np.ndarray], 
+                        slices: Union[List, np.ndarray]):
         
         sum_to_15 = contact_map - np.sum(slices[:, :, :3+1], axis = -1)
         sum_to_18 = sum_to_15 + np.sum(slices[:, :, 0:2+1], axis = -1)
@@ -131,7 +143,7 @@ class Module1_Predictor():
         return
     
     # 
-    def predict_module(self, weights_json_fp):
+    def predict_module(self, weights_json_fp: str, logger = None):
         
         with open(weights_json_fp, 'r') as j:
              weights_json = json.loads(j.read())
@@ -170,14 +182,17 @@ class Module1_Predictor():
         self.predicted_class = bool(predicted_class)
         
         #dev only?
-        print("module 1 prediction done")
+        if logger:
+            logger.info("module 1 prediction done")
+        else:
+            print("module 1 prediction done")
         
         return
     
     # -- save
     
     # 
-    def save_ens_prediction(self, filepath):
+    def save_ens_prediction(self, filepath: str, logger = None):
         
         save_dict = {'raw_sub_var_values':self.sub_vars_raw_vals, 
                      'norm_sub_var_values':self.sub_vars_norm_vals, 
@@ -190,7 +205,10 @@ class Module1_Predictor():
             json.dump(save_dict, f)
         
         #dev only?
-        print(f"file saved at {filepath}")
+        if logger:
+            logger.info(f"file saved at {filepath}")
+        else:
+            print(f"file saved at {filepath}")
         
         return
 # 

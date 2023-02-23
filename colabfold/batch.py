@@ -1354,7 +1354,7 @@ def run(
         jobname = safe_filename(raw_jobname)
         
         interaction_predictor = Module1_Predictor() #add"inf
-        interaction_predictor.set_nb_peptide(query_sequence)
+        interaction_predictor.set_nb_peptide(query_sequence, logger)
         
         #######################################
         # check if job has already finished
@@ -1510,9 +1510,9 @@ def run(
             continue
 
         #add"inf Apply and save module1 inference
-        interaction_predictor.predict_module(input_predictor_weight_path)
+        interaction_predictor.predict_module(input_predictor_weight_path, logger)
         inf_save_path = f"{result_dir.joinpath(jobname).as_posix()}_module1_inference.json"
-        interaction_predictor.save_ens_prediction(inf_save_path)
+        interaction_predictor.save_ens_prediction(inf_save_path, logger)
         result_files.append(result_dir.joinpath(f"{jobname}_module1_inference.json"))
 
         ###############
