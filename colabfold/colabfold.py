@@ -501,7 +501,7 @@ def plot_msas(msa, ori_seq=None, sort_by_seqid=True, deduplicate=True, dpi=100, 
     qid_ = msa_ == np.array(list("".join(seqs)))
     gapid = np.stack([gap_[:,Ln[i]:Ln[i+1]].max(-1) for i in range(len(seqs))],-1)
     seqid = np.stack([qid_[:,Ln[i]:Ln[i+1]].mean(-1) for i in range(len(seqs))],-1).sum(-1) / (gapid.sum(-1) + 1e-8)
-    non_gaps = gap_.astype(np.float)
+    non_gaps = gap_.astype(float)
     non_gaps[non_gaps == 0] = np.nan
     if sort_by_seqid:
       lines.append(non_gaps[seqid.argsort()]*seqid[seqid.argsort(),None])
@@ -655,10 +655,10 @@ def plot_dists(dists, Ls=None, dpi=100, fig=True):
 ##########################################################################
 
 def kabsch(a, b, weights=None, return_v=False):
-  a = np.asarray(a)
-  b = np.asarray(b)
+  a = np.asarray(a,float)
+  b = np.asarray(b,float)
   if weights is None: weights = np.ones(len(b))
-  else: weights = np.asarray(weights)
+  else: weights = np.asarray(weights,float)
   B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
   u, s, vh = np.linalg.svd(B)
   if np.linalg.det(u @ vh) < 0: u[:, -1] = -u[:, -1]
@@ -697,7 +697,7 @@ def plot_pseudo_3D(xyz, c=None, ax=None, chainbreak=5,
   
   if chainbreak is not None:
     dist = np.linalg.norm(xyz[:-1] - xyz[1:], axis=-1)
-    colors[...,3] = (dist < chainbreak).astype(np.float)
+    colors[...,3] = (dist < chainbreak).astype(float)
 
   # add shade/tint based on z-dimension
   z = rescale(seg_z,zmin,zmax)[:,None]
