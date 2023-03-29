@@ -65,6 +65,7 @@ from colabfold.utils import (
     setup_logging,
     CFMMCIFIO,
 )
+from colabfold.add_inference import Module1_Predictor #add"inf
 
 from Bio.PDB import MMCIFParser, PDBParser, MMCIF2Dict
 from Bio.PDB.PDBIO import Select
@@ -378,7 +379,7 @@ class file_manager:
     def set_tag(self, tag):
         self.tag = tag
 
-#add"3 whole function
+#add" whole function
 def parse_disto_results(prediction_result):
     
     to_np = lambda a: np.asarray(a)
@@ -390,10 +391,8 @@ def parse_disto_results(prediction_result):
     out = {"dists": to_np(dist_mtx), 
            "adj": to_np(contact_mtx), 
            #"disto_3D": to_np(prediction_result["distogram"]["logits"]), 
-           "18-19-20-21-22": to_np(jax.nn.softmax(prediction_result["distogram"]["logits"])[:,:, 18:22+1])}
-    #add"4 assumes every complex is cut at bin 20, need to check on a few other complexes
-    #add"4 did not test that that index thing on jax, but works on numpy
-    #add"5 tested and works as intended
+           "16-22": to_np(jax.nn.softmax(prediction_result["distogram"]["logits"])[:,:, 16:22+1])}
+    #add" assumes every complex is cut at bin 20, need to check on a few other complexes
     return out
 
 
@@ -414,10 +413,12 @@ def predict_structure(
     stop_at_score: float = 100,
     prediction_callback: Callable[[Any, Any, Any, Any, Any], Any] = None,
     use_gpu_relax: bool = False,
-    save_all: bool = False,
+    save_all: bool = False, 
+    actually_save_all: bool = False, #add"
     save_single_representations: bool = False,
     save_pair_representations: bool = False,
     save_recycles: bool = False,
+    extra_predictor_object: Module1_Predictor = None #add"inf
 ):
     """Predicts structure using AlphaFold for the given sequence."""
 
@@ -425,7 +426,6 @@ def predict_structure(
     conf = []
     unrelaxed_pdb_lines = []
     prediction_times = []
-
     model_names = []
     files = file_manager(prefix, result_dir)
     seq_len = sum(sequences_lengths)
@@ -489,12 +489,13 @@ def predict_structure(
                         remove_leading_feature_dimension=("multimer" not in model_type))
                     files.get("unrelaxed",f"r{recycles}.pdb").write_text(protein.to_pdb(unrelaxed_protein))
                 
-                    if save_all:
+                    if save_all and actually_save_all: #add"
                         with files.get("all",f"r{recycles}.pickle").open("wb") as handle:
                             pickle.dump(result, handle)
                     del unrelaxed_protein
             
-            return_representations = save_all or save_single_representations or save_pair_representations
+            #add"
+            return_representations = (save_all and actually_save_all) or save_single_representations or save_pair_representations
 
             # predict
             result, recycles = \
@@ -508,6 +509,14 @@ def predict_structure(
             ########################
             # parse results
             ########################
+            
+            #add"
+            disto_dict = parse_disto_results(result)
+            
+            #add"inf process inference object
+            extra_predictor_object.add_multimer(result["iptm"], result["ptm"])
+            extra_predictor_object.add_max_pep_plddt(result["plddt"])
+            extra_predictor_object.add_20_max_prob(disto_dict['adj'], disto_dict['16-22'])
             
             # summary metrics
             mean_scores.append(result["ranking_confidence"])         
@@ -540,13 +549,18 @@ def predict_structure(
             # save results
             #########################      
 
+            #add"
+            temp_disto_path = files.get("custom_disto", "npy")
+            temp_disto_dict = np.array([disto_dict])
+            np.save(temp_disto_path, temp_disto_dict)
+
             # save pdb
             protein_lines = protein.to_pdb(unrelaxed_protein)
             files.get("unrelaxed","pdb").write_text(protein_lines)
             unrelaxed_pdb_lines.append(protein_lines)
 
             # save raw outputs
-            if save_all:
+            if save_all and actually_save_all: #add"
                 with files.get("all","pickle").open("wb") as handle:
                     pickle.dump(result, handle)
             if save_single_representations:
@@ -560,8 +574,8 @@ def predict_structure(
                 scores = {"plddt": np.around(plddt.astype(float), 2).tolist()}
                 if "predicted_aligned_error" in result:
                   pae   = result["predicted_aligned_error"][:seq_len,:seq_len]
-                  scores.update({"max_pae": pae.max().astype(float).item(),
-                                 "pae": np.around(pae.astype(float), 2).tolist()})
+                  scores.update({"max_pae": pae.max().astype(float).item(), 
+                                  "pae": np.around(pae.astype(float), 2).tolist()})
                   for k in ["ptm","iptm"]:
                     if k in conf[-1]: scores[k] = np.around(conf[-1][k], 2).item()
                   del pae
@@ -1246,6 +1260,7 @@ def run(
     save_single_representations: bool = False,
     save_pair_representations: bool = False,
     save_all: bool = False,
+    actually_save_all: bool = False, #add"
     save_recycles: bool = False,
     use_dropout: bool = False,
     use_gpu_relax: bool = False,
@@ -1254,7 +1269,8 @@ def run(
     max_seq: Optional[int] = None,
     max_extra_seq: Optional[int] = None,
     use_cluster_profile: bool = True,
-    feature_dict_callback: Callable[[Any], Any] = None,
+    feature_dict_callback: Callable[[Any], Any] = None, 
+    input_predictor_weight_path: str = None, #add"inf
     **kwargs
 ):
     # check what device is available
@@ -1404,6 +1420,10 @@ def run(
     for job_number, (raw_jobname, query_sequence, a3m_lines) in enumerate(queries):
         jobname = safe_filename(raw_jobname)
         
+        #add"inf
+        interaction_predictor = Module1_Predictor()
+        interaction_predictor.set_nb_peptide(query_sequence, logger)
+        
         #######################################
         # check if job has already finished
         #######################################
@@ -1531,9 +1551,11 @@ def run(
                 random_seed=random_seed,
                 num_seeds=num_seeds,
                 save_all=save_all,
+                actually_save_all = actually_save_all, #add"
                 save_single_representations=save_single_representations,
                 save_pair_representations=save_pair_representations,
-                save_recycles=save_recycles,
+                save_recycles=save_recycles, 
+                extra_predictor_object=interaction_predictor #add"inf
             )
             result_files = results["result_files"]
             ranks.append(results["rank"])
@@ -1543,7 +1565,13 @@ def run(
             # This normally happens on OOM. TODO: Filter for the specific OOM error message
             logger.error(f"Could not predict {jobname}. Not Enough GPU memory? {e}")
             continue
-
+        
+        #add"inf Apply and save module 1 inference
+        interaction_predictor.predict_module(input_predictor_weight_path, logger)
+        inf_save_path = f"{result_dir.joinpath(jobname).as_posix()}_module1_inference.json"
+        interaction_predictor.save_ens_prediction(inf_save_path, logger)
+        result_files.append(result_dir.joinpath(f"{jobname}_module1_inference.json"))
+        
         ###############
         # save plots
         ###############
