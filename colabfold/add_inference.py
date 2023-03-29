@@ -98,12 +98,15 @@ class Module1_Predictor():
     # -- for each sub-prediction
     
     # 
+    # values (at least iptm) might come in as a np.array(number) format
+    # so a 0-dimensional numpy array
+    # on which float(var) works but var = var[0] doesn't
     def add_multimer(self, new_iptm: Union[np.ndarray, float], 
                      new_ptm: Union[np.ndarray, float]):
-        if type(new_iptm) != float:
-            new_iptm = new_iptm[0]
-        if type(new_ptm) != float:
-            new_ptm = new_ptm[0]
+        # if type(new_iptm) != float:
+        #     new_iptm = new_iptm[0]
+        # if type(new_ptm) != float:
+        #     new_ptm = new_ptm[0]
             
         self.multimer_list.append(0.8*float(new_iptm) + 0.2*float(new_ptm))
         
