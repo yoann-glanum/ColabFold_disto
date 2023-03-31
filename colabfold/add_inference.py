@@ -35,9 +35,10 @@ class Module1_Predictor():
     sub_vars_mapping: dict
     sub_vars_raw_vals: dict
     sub_vars_norm_vals: dict
-    ens_method: str
-    ens_threshold: float
+    method: str
+    threshold: float
     raw_prediction: float
+    distance_to_thresh: float
     predicted_class: int
     weights_filepath: str
     
@@ -146,24 +147,12 @@ class Module1_Predictor():
         
         return
     
+    
     # 
-    def predict_module(self, weights_json_fp: str, logger = None):
+    def run_ensembling_ver(self, ens_dict):
         
-        with open(weights_json_fp, 'r') as j:
-             weights_json = json.loads(j.read())
-        self.weights_filepath = weights_json_fp
+        self.threshold = float(ens_dict['post_scale_ens_threshold'])
         
-        if len(weights_json.keys()) != 1:
-            print("Can not take multiple ensembling functions yet")
-            #TODO
-            return "error"
-        ensemble_name = list(weights_json.keys())[0]
-        self.ens_method = ensemble_name
-        
-        ens_dict = weights_json[ensemble_name]
-        self.ens_threshold = float(ens_dict['post_scale_ens_threshold'])
-        
-        self.refresh_mapping_dict()
         #TODO add check for vars min == vars max
         for subvar in ens_dict['vars_min_pre_scale']:
             # get average over all ranks : seeds * models
@@ -181,22 +170,55 @@ class Module1_Predictor():
             normalised_value = float(normalised_value) # for json float64
             self.sub_vars_norm_vals[subvar] = normalised_value
         
+        return
+    
+    
+    # 
+    def solo_var_ver(self):
+        
+        #TODO
+        
+        return
+    
+    # 
+    def predict_module(self, weights_json_fp: str, logger = None):
+        
+        with open(weights_json_fp, 'r') as j:
+             weights_json = json.loads(j.read())
+        self.weights_filepath = weights_json_fp
+        
+        if len(weights_json.keys()) != 1:
+            print("Can not take multiple ensembling functions yet")
+            #TODO
+            return "error"
+        ensemble_name = list(weights_json.keys())[0]
+        self.method = ensemble_name
+        
+        ens_dict = weights_json[ensemble_name]
+        
+        self.refresh_mapping_dict()
+        
+        if 'post_scale_ens_threshold' in ens_dict:
+            self.run_ensembling_ver(ens_dict)
+        else:
+            self.solo_var_ver()
+        
         # raw prediction
         raw_pred = np.mean([value for key, value in self.sub_vars_norm_vals.items()])
         raw_pred = float(raw_pred)
-        predicted_class = raw_pred >= self.ens_threshold
+        predicted_class = raw_pred >= self.threshold
         self.raw_prediction = raw_pred
         self.predicted_class = bool(predicted_class)
         
-        #TODO add distance to threshold?
+        self.distance_to_thresh = self.raw_prediction - self.threshold
         
         #dev only?
         if logger:
-            logger.info(f"module 1 prediction done : Binary Pep-Prot Interaction predicted as \
-                        {self.predicted_class} (raw value of {self.raw_prediction})")
+            logger.info("Module 1 prediction done : Binary Pep-Prot Interaction predicted as" +
+                        f"\n{self.predicted_class} (raw value of {self.raw_prediction})")
         else:
-            print(f"module 1 prediction done : Binary Pep-Prot Interaction predicted as \
-                  {self.predicted_class} (raw value of {self.raw_prediction})")
+            print("Module 1 prediction done : Binary Pep-Prot Interaction predicted as" +
+                  f"\n{self.predicted_class} (raw value of {self.raw_prediction})")
         
         return
     
@@ -207,9 +229,10 @@ class Module1_Predictor():
         
         save_dict = {'raw_sub_var_values':self.sub_vars_raw_vals, 
                      'norm_sub_var_values':self.sub_vars_norm_vals, 
-                     'ensembling_method':self.ens_method, 
-                     'ensembling_threshold':self.ens_threshold, 
+                     'method':self.method, 
+                     'threshold':self.threshold, 
                      'raw_prediction':self.raw_prediction, 
+                     'distance_to_threshold':self.distance_to_thresh, 
                      'predicted_class':self.predicted_class
                      }
         with open(filepath, 'w') as f:
